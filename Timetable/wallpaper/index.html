@@ -1,0 +1,599 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Timetable</title>
+<style>
+:root{
+  --bg:#f3f2f8; --panel:rgba(255,255,255,.7); --solid:#fff; --ink:#1c1c1e; --mute:#8a8a92;
+  --line:rgba(60,60,67,.11); --hover:rgba(60,60,67,.07); --accent:#ff3b30; --shadow:0 10px 40px rgba(40,30,80,.10);
+  --blob1:#ffd7e4; --blob2:#d6e4ff; --blob3:#e2d9ff; --evmix:18%; --evink:62%;
+}
+[data-theme=dark]{
+  --bg:#0d0d11; --panel:rgba(28,28,34,.68); --solid:#1c1c22; --ink:#f2f2f7; --mute:#8e8e99;
+  --line:rgba(255,255,255,.08); --hover:rgba(255,255,255,.08); --accent:#ff453a; --shadow:0 10px 40px rgba(0,0,0,.45);
+  --blob1:#3a1530; --blob2:#12264d; --blob3:#2a1c55; --evmix:26%; --evink:30%;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{
+  font-family:"Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,sans-serif;
+  color:var(--ink);background:var(--bg);overflow:hidden;-webkit-font-smoothing:antialiased;
+}
+body::before{
+  content:"";position:fixed;inset:-20%;z-index:-1;filter:blur(70px);
+  background:
+    radial-gradient(38% 34% at 16% 20%,var(--blob1),transparent 70%),
+    radial-gradient(40% 40% at 86% 12%,var(--blob2),transparent 70%),
+    radial-gradient(45% 40% at 62% 92%,var(--blob3),transparent 70%);
+}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none}
+.app{display:grid;grid-template-columns:286px 1fr;gap:14px;height:100%;padding:14px}
+.panel{background:var(--panel);-webkit-backdrop-filter:blur(28px) saturate(1.5);backdrop-filter:blur(28px) saturate(1.5);border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow)}
+
+/* sidebar */
+.side{display:flex;flex-direction:column;gap:18px;padding:22px 18px;overflow:auto;min-height:0}
+.clock{font-family:"Segoe UI Variable Display","Segoe UI",sans-serif;font-size:54px;font-weight:600;letter-spacing:-2px;line-height:1}
+.today{color:var(--mute);font-size:14px;margin-top:6px;text-transform:capitalize}
+.today b{color:var(--accent);font-weight:600}
+.h{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--mute);margin:0 0 8px 2px}
+.mini{display:grid;grid-template-columns:repeat(7,1fr);row-gap:2px;font-size:12px;text-align:center}
+.mini-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;font-weight:600;font-size:14px;text-transform:capitalize}
+.mini .dow{color:var(--mute);font-size:10px;font-weight:600;padding:4px 0}
+.mini button{height:28px;border-radius:9px;position:relative}
+.mini button:hover{background:var(--hover)}
+.mini .out{color:var(--mute);opacity:.5}
+.mini .wk{background:var(--hover);border-radius:0}
+.mini .wk.f{border-radius:9px 0 0 9px}.mini .wk.l{border-radius:0 9px 9px 0}
+.mini .now{background:var(--accent)!important;color:#fff;font-weight:700;border-radius:9px!important}
+.mini .dot::after{content:"";position:absolute;left:50%;bottom:3px;width:3px;height:3px;margin-left:-1.5px;border-radius:50%;background:currentColor;opacity:.55}
+.next{display:flex;flex-direction:column;gap:8px}
+.nx{display:flex;gap:10px;padding:10px 12px;border-radius:14px;background:color-mix(in srgb,var(--c) 12%,transparent);text-align:left;width:100%;position:relative;overflow:hidden}
+.nx:hover{background:color-mix(in srgb,var(--c) 20%,transparent)}
+.nx i{flex:none;width:4px;border-radius:4px;background:var(--c)}
+.nx .t{font-weight:600;font-size:13.5px;line-height:1.25}
+.nx .m{font-size:12px;color:var(--mute);margin-top:2px}
+.nx .live{font-size:10px;font-weight:700;letter-spacing:.06em;color:var(--c);text-transform:uppercase}
+.nx .bar{position:absolute;left:0;bottom:0;height:2px;background:var(--c)}
+.daylab{font-size:12px;font-weight:600;color:var(--mute);margin:6px 2px 0;text-transform:capitalize}
+.empty{color:var(--mute);font-size:13px;padding:4px 2px}
+
+/* main */
+.main{display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden}
+.top{display:flex;align-items:center;gap:10px;padding:16px 20px 12px}
+.title{font-family:"Segoe UI Variable Display","Segoe UI",sans-serif;font-size:27px;font-weight:700;letter-spacing:-.6px;text-transform:capitalize;white-space:nowrap}
+.title span{font-weight:300;color:var(--mute)}
+.week{font-size:12px;font-weight:600;color:var(--mute);background:var(--hover);padding:4px 9px;border-radius:20px;white-space:nowrap}
+.sp{flex:1}
+.btn{height:34px;padding:0 13px;border-radius:11px;background:var(--hover);font-size:13px;font-weight:600;white-space:nowrap;transition:.15s}
+.btn:hover{filter:brightness(.94)}[data-theme=dark] .btn:hover{filter:brightness(1.35)}
+.btn.ic{width:34px;padding:0;font-size:17px;line-height:1}
+.btn.pri{background:var(--ink);color:var(--bg)}
+.seg{display:flex;background:var(--hover);border-radius:11px;padding:3px}
+.seg button{height:28px;padding:0 12px;border-radius:8px;font-size:13px;font-weight:600;color:var(--mute)}
+.seg .on{background:var(--solid);color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.12)}
+
+.cal{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;--cols:56px repeat(var(--n),minmax(0,1fr))}
+.cal::-webkit-scrollbar,.side::-webkit-scrollbar{width:8px}.cal::-webkit-scrollbar-thumb,.side::-webkit-scrollbar-thumb{background:var(--line);border-radius:8px}
+.head{position:sticky;top:0;z-index:5;background:var(--solid);border-bottom:1px solid var(--line)}
+[data-theme] .head{background:color-mix(in srgb,var(--solid) 86%,transparent);backdrop-filter:blur(20px)}
+.row{display:grid;grid-template-columns:var(--cols)}
+.dh{padding:8px 0 10px;text-align:center;font-size:12px;font-weight:600;color:var(--mute);text-transform:uppercase;letter-spacing:.05em}
+.dh b{display:block;margin:4px auto 0;width:38px;height:38px;line-height:38px;border-radius:50%;font-size:21px;font-weight:500;color:var(--ink);letter-spacing:-.5px;font-family:"Segoe UI Variable Display","Segoe UI",sans-serif}
+.dh.now{color:var(--accent)}.dh.now b{background:var(--accent);color:#fff;font-weight:600}
+.ad{padding:0 3px 6px;display:flex;flex-direction:column;gap:3px;min-width:0}
+.adl{font-size:10px;color:var(--mute);text-align:right;padding:4px 8px 0 0}
+.chip{display:block;width:100%;text-align:left;font-size:12px;font-weight:600;padding:3px 8px;border-radius:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  background:color-mix(in srgb,var(--c) var(--evmix),transparent);color:color-mix(in srgb,var(--c) var(--evink),var(--ink))}
+.grid{flex:1;position:relative;display:grid;grid-template-columns:var(--cols);min-height:calc(var(--hrs)*52px)}
+.hours{position:relative}
+.hours span{position:absolute;right:9px;transform:translateY(-50%);font-size:11px;color:var(--mute);font-variant-numeric:tabular-nums;white-space:nowrap}
+.col{position:relative;border-left:1px solid var(--line);background-image:linear-gradient(var(--line) 1px,transparent 1px);background-size:100% calc(100%/var(--hrs))}
+.col.now{background-color:color-mix(in srgb,var(--accent) 4%,transparent)}
+.ev{position:absolute;padding:1px 2px;min-height:20px}
+.ev button{display:block;width:100%;height:100%;text-align:left;border-radius:9px;padding:5px 8px 4px 11px;overflow:hidden;position:relative;
+  background:color-mix(in srgb,var(--c) var(--evmix),var(--solid));color:color-mix(in srgb,var(--c) var(--evink),var(--ink));transition:transform .15s,box-shadow .15s}
+.ev button::before{content:"";position:absolute;left:3px;top:4px;bottom:4px;width:3.5px;border-radius:4px;background:var(--c)}
+.ev button:hover{transform:scale(1.015);box-shadow:0 6px 18px color-mix(in srgb,var(--c) 35%,transparent);z-index:3}
+.ev .t{font-size:12.5px;font-weight:650;line-height:1.2;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.ev .m{font-size:11px;opacity:.8;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ev.tiny button{padding-top:2px;padding-bottom:0}.ev.tiny .t{-webkit-line-clamp:1}.ev.tiny .m{display:none}
+.ev.past button{opacity:.55}
+.nowline{position:absolute;left:-5px;right:0;height:2px;background:var(--accent);z-index:4;pointer-events:none}
+.nowline::before{content:"";position:absolute;left:0;top:-4px;width:10px;height:10px;border-radius:50%;background:var(--accent)}
+
+/* dialogs */
+dialog{border:1px solid var(--line);border-radius:22px;padding:0;color:var(--ink);background:var(--solid);box-shadow:0 30px 80px rgba(0,0,0,.35);width:min(480px,92vw);max-height:86vh}
+dialog::backdrop{background:rgba(10,10,20,.35);backdrop-filter:blur(6px)}
+.dlg{padding:24px}
+.dlg h2{margin:0 0 4px;font-size:21px;letter-spacing:-.3px}
+.dlg p{margin:6px 0;color:var(--mute);font-size:13px;line-height:1.5}
+.evbar{height:8px;background:var(--c)}
+.kv{display:grid;grid-template-columns:22px 1fr;gap:8px 8px;margin-top:14px;font-size:14px;line-height:1.45}
+.kv span{opacity:.6}.kv div{white-space:pre-wrap;overflow-wrap:anywhere}
+.src{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:13px;background:var(--hover);margin-top:8px}
+.src .n{flex:1;min-width:0}.src .n b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.src .n small{color:var(--mute);font-size:12px}.src .n small.err{color:var(--accent)}
+.in{width:100%;height:38px;border-radius:11px;border:1px solid var(--line);background:var(--hover);padding:0 12px;font-size:13px;outline:none}
+.in:focus{border-color:var(--ink)}
+.rowf{display:flex;gap:8px;margin-top:8px}
+.foot{display:flex;justify-content:space-between;gap:8px;margin-top:20px}
+#toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,80px);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:13px;font-size:13px;font-weight:600;transition:.3s;z-index:99;max-width:80vw}
+#toast.on{transform:translate(-50%,0)}
+.drop{position:fixed;inset:12px;border:3px dashed var(--accent);border-radius:26px;background:color-mix(in srgb,var(--accent) 10%,transparent);display:none;place-items:center;font-size:22px;font-weight:700;z-index:98;pointer-events:none}
+body.drag .drop{display:grid}
+.welcome{position:absolute;inset:0;display:grid;place-items:center;z-index:6;pointer-events:none}
+.welcome>div{pointer-events:auto;text-align:center;max-width:380px;padding:30px;border-radius:22px;background:var(--solid);border:1px solid var(--line);box-shadow:var(--shadow)}
+.welcome h2{margin:0 0 6px;font-size:22px}.welcome p{color:var(--mute);font-size:14px;line-height:1.5;margin:0 0 16px}
+@media (max-width:900px){.app{grid-template-columns:1fr}.side{display:none}}
+/* wallpaper: leave room for the taskbar and (optionally) desktop icons; no text selection */
+body{user-select:none;cursor:default}
+.app{padding:14px 14px calc(14px + var(--padB,52px)) calc(14px + var(--padL,0px))}
+.ev.exam button{background:color-mix(in srgb,var(--c) 86%,#000);color:#fff}
+.ev.exam button::before{background:rgba(255,255,255,.75)}
+.ev.exam .m{font-weight:600}
+.nx .live{display:block}
+.evsub{font-size:13px;font-weight:600;margin-top:4px;color:color-mix(in srgb,var(--c) var(--evink),var(--ink))}
+.exams{padding:4px 20px 20px}
+.xgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+.xcol{display:flex;flex-direction:column;gap:14px;min-width:0}
+.xc{background:var(--solid);border:1px solid var(--line);border-radius:18px;padding:16px 18px 16px 22px;position:relative;overflow:hidden}
+.xc::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--c)}
+.xh{display:flex;gap:12px;cursor:pointer;width:100%;text-align:left}
+.xh>div:first-child{flex:1;min-width:0}
+.xn{font-size:16.5px;font-weight:700}
+.xw{font-size:13px;font-weight:600;margin-top:4px;color:color-mix(in srgb,var(--c) var(--evink),var(--ink))}
+.xr{font-size:12px;color:var(--mute);margin-top:2px}
+.xd{text-align:right;font-size:32px;font-weight:700;color:var(--c);line-height:1}
+.xd small{display:block;font-size:11px;color:var(--mute);font-weight:600;margin-top:2px}
+.xd.s{font-size:18px;line-height:1.3}
+.xsep{height:1px;background:var(--line);margin:12px 0 10px}
+.xb{display:flex;justify-content:space-between;gap:12px;font-size:10.5px;font-weight:700;color:var(--mute);margin-bottom:4px}
+.xb span:last-child{font-size:11.5px;font-weight:600;text-align:right}
+.xs{display:grid;grid-template-columns:86px 132px 50px 1fr;width:calc(100% + 16px);margin:0 -8px;padding:5px 8px;border-radius:8px;font-size:12.5px;text-align:left;align-items:center}
+.xs:hover{background:var(--hover)}
+.xs b{font-weight:600;text-transform:capitalize}.xs b.now{color:var(--accent)}
+.xs i{font-style:normal;justify-self:start;font-size:10.5px;font-weight:700;padding:1px 6px 2px;border-radius:6px;background:color-mix(in srgb,var(--c) 16%,transparent);color:color-mix(in srgb,var(--c) var(--evink),var(--ink))}
+.xs em{font-style:normal;color:var(--mute);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.xl{font-size:12px;color:var(--mute);margin-top:10px}
+.xnone{font-size:12.5px;color:var(--mute)}
+.rest{background:var(--solid);border:1px solid var(--line);border-radius:18px;padding:8px 18px}
+.rest div{display:flex;align-items:center;gap:12px;padding:7px 0;font-size:13.5px;font-weight:600}
+.rest div::before{content:"";width:4px;align-self:stretch;border-radius:2px;background:var(--c)}
+.rest span{flex:1}.rest small{font-size:12.5px;font-weight:400;color:var(--mute)}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side panel">
+    <div><div class="clock" id="clock"></div><div class="today" id="today"></div></div>
+    <div><div class="mini-top"><span id="miniTitle"></span><span><button class="btn ic" id="mPrev" style="height:26px;width:26px;font-size:14px">‹</button> <button class="btn ic" id="mNext" style="height:26px;width:26px;font-size:14px">›</button></span></div><div class="mini" id="mini"></div></div>
+    <div><div class="h">Up next</div><div class="next" id="next"></div></div>
+  </aside>
+  <main class="main panel">
+    <header class="top">
+      <div class="title" id="title"></div><div class="week" id="week"></div>
+      <div class="sp"></div>
+      <button class="btn ic nav" id="prev">‹</button>
+      <button class="btn nav" id="tod">Today</button>
+      <button class="btn ic nav" id="nextB">›</button>
+      <div class="seg" id="view"><button data-v="day">Day</button><button data-v="week">Week</button><button data-v="exams">Exams</button></div>
+      <button class="btn" id="wkd"></button>
+      <button class="btn ic" id="theme" title="Light / dark">◐</button>
+    </header>
+    <section class="cal" id="cal"></section>
+  </main>
+</div>
+<dialog id="evDlg"><div class="evbar"></div><div class="dlg" id="evBody"></div></dialog>
+
+<script>
+'use strict';
+const $=s=>document.querySelector(s), DAY=864e5, MIN=6e4;
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const PALETTE=['#ff5e57','#ff9f43','#f5b301','#2ecc71','#1fc8b4','#3fa9f5','#4b7bec','#a55eea','#f368a8','#7f8fa6'];
+const WIN_TZ={'UTC':'UTC','W. Europe Standard Time':'Europe/Berlin','Romance Standard Time':'Europe/Paris','Central Europe Standard Time':'Europe/Budapest','Central European Standard Time':'Europe/Warsaw','GMT Standard Time':'Europe/London','Greenwich Standard Time':'Atlantic/Reykjavik','E. Europe Standard Time':'Europe/Chisinau','FLE Standard Time':'Europe/Helsinki','GTB Standard Time':'Europe/Bucharest','Russian Standard Time':'Europe/Moscow','Turkey Standard Time':'Europe/Istanbul','Israel Standard Time':'Asia/Jerusalem','South Africa Standard Time':'Africa/Johannesburg','Egypt Standard Time':'Africa/Cairo','Morocco Standard Time':'Africa/Casablanca','Eastern Standard Time':'America/New_York','Central Standard Time':'America/Chicago','Mountain Standard Time':'America/Denver','US Mountain Standard Time':'America/Phoenix','Pacific Standard Time':'America/Los_Angeles','Alaskan Standard Time':'America/Anchorage','Hawaiian Standard Time':'Pacific/Honolulu','Atlantic Standard Time':'America/Halifax','E. South America Standard Time':'America/Sao_Paulo','Argentina Standard Time':'America/Buenos_Aires','India Standard Time':'Asia/Kolkata','Pakistan Standard Time':'Asia/Karachi','SE Asia Standard Time':'Asia/Bangkok','China Standard Time':'Asia/Shanghai','Singapore Standard Time':'Asia/Singapore','Tokyo Standard Time':'Asia/Tokyo','Korea Standard Time':'Asia/Seoul','Arabian Standard Time':'Asia/Dubai','Arab Standard Time':'Asia/Riyadh','AUS Eastern Standard Time':'Australia/Sydney','E. Australia Standard Time':'Australia/Brisbane','W. Australia Standard Time':'Australia/Perth','New Zealand Standard Time':'Pacific/Auckland'};
+
+/* ---------- time zones ---------- */
+const zoneCache=new Map(), dtfCache=new Map();
+function resolveZone(id){
+  if(!id) return null;
+  id=id.replace(/^"|"$/g,'');
+  if(zoneCache.has(id)) return zoneCache.get(id);
+  let z=null;
+  for(const c of [id,WIN_TZ[id],id.replace(/^.*\//,m=>m)]){
+    if(!c) continue;
+    try{ new Intl.DateTimeFormat('en-US',{timeZone:c}); z=c; break; }catch(e){}
+  }
+  zoneCache.set(id,z); return z;
+}
+function tzOffset(zone,t){
+  let f=dtfCache.get(zone);
+  if(!f){ f=new Intl.DateTimeFormat('en-US',{timeZone:zone,hourCycle:'h23',year:'numeric',month:'numeric',day:'numeric',hour:'numeric',minute:'numeric',second:'numeric'}); dtfCache.set(zone,f); }
+  const p={}; for(const x of f.formatToParts(t)) p[x.type]=+x.value;
+  return Date.UTC(p.year,p.month-1,p.day,p.hour%24,p.minute,p.second)-Math.floor(t/1000)*1000;
+}
+// nv = wall-clock time stored as if it were UTC; returns the real instant
+function toReal(nv,zone){
+  if(zone==='UTC') return nv;
+  if(!zone){ const d=new Date(nv); return new Date(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate(),d.getUTCHours(),d.getUTCMinutes(),d.getUTCSeconds()).getTime(); }
+  return nv-tzOffset(zone,nv-tzOffset(zone,nv));
+}
+
+/* ---------- ICS parsing ---------- */
+const WD={SU:0,MO:1,TU:2,WE:3,TH:4,FR:5,SA:6};
+const unesc=s=>(s||'').replace(/\\n/gi,'\n').replace(/\\([,;\\])/g,'$1').trim();
+function parseLine(l){
+  let q=false,i=0;
+  for(;i<l.length;i++){ const c=l[i]; if(c==='"') q=!q; else if(c===':'&&!q) break; }
+  const [name,...ps]=l.slice(0,i).split(';'), params={};
+  for(const p of ps){ const k=p.indexOf('='); if(k>0) params[p.slice(0,k).toUpperCase()]=p.slice(k+1); }
+  return {name:name.toUpperCase(),params,value:l.slice(i+1)};
+}
+function parseDT(v,params){
+  const m=/^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})?)?(Z)?/.exec(v.trim());
+  if(!m) return null;
+  const allDay=m[4]===undefined;
+  return {allDay,nv:Date.UTC(+m[1],m[2]-1,+m[3],+(m[4]||0),+(m[5]||0),+(m[6]||0)),zone:allDay?null:m[7]?'UTC':resolveZone(params&&params.TZID)};
+}
+function parseDur(v){
+  const m=/^([+-])?P(?:(\d+)W)?(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?/.exec(v.trim());
+  if(!m) return 0;
+  return (m[1]==='-'?-1:1)*((+m[2]||0)*7*DAY+(+m[3]||0)*DAY+(+m[4]||0)*36e5+(+m[5]||0)*MIN+(+m[6]||0)*1000);
+}
+function parseRule(v){
+  const r={}; for(const kv of v.split(';')){ const [k,x]=kv.split('='); if(k) r[k.toUpperCase()]=x||''; }
+  if(!r.FREQ) return null;
+  const o={freq:r.FREQ.toUpperCase(),interval:Math.max(1,+r.INTERVAL||1),count:+r.COUNT||0,wkst:WD[r.WKST]??1};
+  if(r.UNTIL){ const u=parseDT(r.UNTIL,{}); if(u) o.until=u.allDay?toReal(u.nv,null)+DAY-1:toReal(u.nv,u.zone); }
+  if(r.BYDAY) o.byday=r.BYDAY.split(',').map(s=>{const m=/^([+-]?\d+)?([A-Z]{2})$/.exec(s.trim().toUpperCase());return m&&WD[m[2]]!==undefined?{n:+m[1]||0,wd:WD[m[2]]}:null}).filter(Boolean);
+  if(r.BYMONTHDAY) o.bymonthday=r.BYMONTHDAY.split(',').map(Number).filter(Boolean);
+  if(r.BYMONTH) o.bymonth=r.BYMONTH.split(',').map(Number).filter(Boolean);
+  if(r.BYSETPOS) o.setpos=+r.BYSETPOS.split(',')[0]||0;
+  if(o.byday&&!o.byday.length) delete o.byday;
+  return o;
+}
+function parseICS(text){
+  const lines=text.replace(/\r\n?/g,'\n').replace(/\n[ \t]/g,'').split('\n');
+  const out={name:'',masters:[]}; let ev=null, depth=0;
+  for(const raw of lines){
+    if(!raw) continue;
+    const {name,params,value}=parseLine(raw);
+    if(name==='BEGIN'){ if(value.toUpperCase()==='VEVENT'){ ev={ex:[],params:{}}; depth=0; } else if(ev) depth++; continue; }
+    if(name==='END'){
+      if(ev&&depth>0){ depth--; continue; }
+      if(ev&&value.toUpperCase()==='VEVENT'){ const m=finish(ev); if(m) out.masters.push(m); ev=null; }
+      continue;
+    }
+    if(!ev){ if(name==='X-WR-CALNAME') out.name=unesc(value); continue; }
+    if(depth) continue; // inside VALARM
+    if(name==='EXDATE') ev.ex.push({value,params}); else { ev[name]=value; ev.params[name]=params; }
+  }
+  // detached overrides replace the matching occurrence of their master
+  const byUid=new Map();
+  for(const m of out.masters) if(m.rrule&&m.uid) byUid.set(m.uid,m);
+  for(const m of out.masters) if(m.rid!=null&&byUid.has(m.uid)) byUid.get(m.uid).ex.add(m.rid);
+  out.masters=out.masters.filter(m=>!m.cancelled);
+  return out;
+}
+function finish(e){
+  if(!e.DTSTART) return null;
+  const s=parseDT(e.DTSTART,e.params.DTSTART); if(!s) return null;
+  let dur=0;
+  if(e.DTEND){ const x=parseDT(e.DTEND,e.params.DTEND); if(x) dur=s.zone===x.zone||s.allDay?x.nv-s.nv:toReal(x.nv,x.zone)-toReal(s.nv,s.zone); }
+  else if(e.DURATION) dur=parseDur(e.DURATION);
+  if(dur<=0) dur=s.allDay?DAY:0;
+  const m={uid:e.UID||'',title:unesc(e.SUMMARY)||'(No title)',loc:unesc(e.LOCATION),desc:unesc(e.DESCRIPTION),allDay:s.allDay,zone:s.zone,nv:s.nv,dur,
+    rrule:e.RRULE?parseRule(e.RRULE):null,ex:new Set(),rid:null,cancelled:(e.STATUS||'').toUpperCase()==='CANCELLED'};
+  for(const x of e.ex) for(const v of x.value.split(',')){ const d=parseDT(v,x.params); if(d) m.ex.add(toReal(d.nv,d.allDay?null:d.zone)); }
+  if(e['RECURRENCE-ID']){ const d=parseDT(e['RECURRENCE-ID'],e.params['RECURRENCE-ID']); if(d) m.rid=toReal(d.nv,d.allDay?null:d.zone); }
+  return m;
+}
+
+/* ---------- recurrence ---------- */
+const dim=(y,m)=>new Date(Date.UTC(y,m+1,0)).getUTCDate();
+function nthWd(y,m,wd,n){
+  const L=dim(y,m);
+  if(n>0){ const d=1+(wd-new Date(Date.UTC(y,m,1)).getUTCDay()+7)%7+(n-1)*7; return d<=L?d:0; }
+  const d=L-(new Date(Date.UTC(y,m,L)).getUTCDay()-wd+7)%7+(n+1)*7; return d>=1?d:0;
+}
+function monthDays(r,y,m,dflt){
+  const L=dim(y,m); let ds=[];
+  if(r.byday){
+    for(const b of r.byday){
+      if(b.n){ const d=nthWd(y,m,b.wd,b.n); if(d) ds.push(d); }
+      else for(let d=1;d<=L;d++) if(new Date(Date.UTC(y,m,d)).getUTCDay()===b.wd) ds.push(d);
+    }
+    if(r.bymonthday) ds=ds.filter(d=>r.bymonthday.includes(d)||r.bymonthday.includes(d-L-1));
+  } else if(r.bymonthday) ds=r.bymonthday.map(d=>d<0?L+1+d:d);
+  else ds=[dflt];
+  ds=[...new Set(ds)].filter(d=>d>=1&&d<=L).sort((a,b)=>a-b);
+  if(r.setpos&&ds.length){ const i=r.setpos>0?r.setpos-1:ds.length+r.setpos; ds=ds[i]?[ds[i]]:[]; }
+  return ds;
+}
+function* gen(m){
+  const r=m.rrule, nv=m.nv, d0=new Date(nv), y0=d0.getUTCFullYear(), m0=d0.getUTCMonth(), day0=d0.getUTCDate();
+  const tod=nv-Date.UTC(y0,m0,day0), CAP=4000;
+  if(r.freq==='DAILY'){
+    for(let i=0;i<CAP*4;i++){ const c=nv+i*r.interval*DAY; if(r.byday&&!r.byday.some(b=>b.wd===new Date(c).getUTCDay())) continue; yield c; }
+  } else if(r.freq==='WEEKLY'){
+    const offs=[...new Set((r.byday?r.byday.map(b=>b.wd):[d0.getUTCDay()]).map(w=>(w-r.wkst+7)%7))].sort((a,b)=>a-b);
+    const ws=Date.UTC(y0,m0,day0)-((d0.getUTCDay()-r.wkst+7)%7)*DAY;
+    for(let w=0;w<CAP;w++) for(const o of offs){ const c=ws+(w*r.interval*7+o)*DAY+tod; if(c>=nv) yield c; }
+  } else if(r.freq==='MONTHLY'){
+    for(let i=0;i<CAP;i++){
+      const t=m0+i*r.interval, y=y0+Math.floor(t/12), mo=t%12;
+      if(r.bymonth&&!r.bymonth.includes(mo+1)) continue;
+      for(const d of monthDays(r,y,mo,day0)){ const c=Date.UTC(y,mo,d)+tod; if(c>=nv) yield c; }
+    }
+  } else if(r.freq==='YEARLY'){
+    for(let i=0;i<400;i++){
+      const y=y0+i*r.interval;
+      for(const mo of (r.bymonth?r.bymonth.map(x=>x-1).sort((a,b)=>a-b):[m0]))
+        for(const d of monthDays(r,y,mo,day0)){ const c=Date.UTC(y,mo,d)+tod; if(c>=nv) yield c; }
+    }
+  } else yield nv;
+}
+function expand(m,from,to,out){
+  const push=nv=>{
+    const s=toReal(nv,m.zone); if(s>=to) return false;
+    let e=toReal(nv+m.dur,m.zone); if(e<=s) e=s+30*MIN;
+    if(e>from&&!(m.rrule&&m.ex.has(s))) out.push({m,s,e});
+    return true;
+  };
+  if(!m.rrule){ push(m.nv); return; }
+  let n=0;
+  for(const nv of gen(m)){
+    if(m.rrule.count&&++n>m.rrule.count) break;
+    if(m.rrule.until!=null&&toReal(nv,m.zone)>m.rrule.until) break;
+    if(!push(nv)) break;
+  }
+}
+
+/* ---------- subjects and exams ---------- */
+const STRUCT=/^\s*\[([^\]]*)\]\s*(.*?)\s*(?:\[([^\]]*)\]\s*(.*))?$/s;
+const EXAM=/(?<!\p{L})(examens?|exams?|partiels?|contr[oô]les?|ds|dst|midterms?|quiz|[ée]valuations?|soutenances?)(?!\p{L})/iu;
+const RESIT=/(?<!\p{L})(rattrapages?|resits?|retakes?|seconde session|session 2)(?!\p{L})/iu;
+// Splits school-style titles such as "[CODE]Subject [TD]Teacher"; plain titles are used whole.
+function classify(m){
+  m.subject=m.title; m.code=m.kind=m.teacher='';
+  const x=STRUCT.exec(m.title);
+  if(x&&x[2].trim()){ m.code=x[1].trim(); m.subject=x[2].trim(); m.kind=(x[3]||'').trim(); m.teacher=(x[4]||'').trim(); if(m.kind.toUpperCase()==='NR') m.kind=''; }
+  const probe=m.kind||m.subject;
+  m.isResit=RESIT.test(probe); m.isExam=m.isResit||EXAM.test(probe);
+  m.key=(m.code||m.subject).toLowerCase().trim();
+}
+const room=m=>(m.loc||'').replace(/\s*\(\d+\)/g,'').replace(/\s*,\s*/g,', ');
+const kindLabel=m=>m.isResit?'Resit':m.isExam?'Exam':m.kind;
+const meta=(...p)=>p.filter(Boolean).join(' · ');
+
+/* ---------- state ---------- */
+const S={view:'week',days:7,theme:'auto',cursor:new Date()};
+const PAL=[...PALETTE,'#00a8cc','#e17055','#6c5ce7','#00a86b','#d6336c','#b7950b'];
+let masters=[], occCache=new Map(), shown=[], colorMap=new Map(), stamp=null, loaded=false;
+try{ Object.assign(S,JSON.parse(localStorage.getItem('tt.wall')||'{}')); }catch(e){}
+S.cursor=new Date();
+if(['#day','#week','#exams'].includes(location.hash)) S.view=location.hash.slice(1);
+const save=()=>{ try{ localStorage.setItem('tt.wall',JSON.stringify({view:S.view,days:S.days,theme:S.theme})); }catch(e){} };
+
+// data.js is written next to this page by the Timetable app and calls this with the calendars
+window.__ttData=d=>{
+  loaded=true;
+  if(d.generated===stamp) return;
+  stamp=d.generated; masters=[];
+  for(const s of d.sources||[]) try{ masters.push(...parseICS(s.text).masters); }catch(e){}
+  masters.forEach(classify);
+  const n=new Map(); for(const m of masters) n.set(m.key,(n.get(m.key)||0)+1);
+  colorMap=new Map([...n].sort((a,b)=>b[1]-a[1]||(a[0]<b[0]?-1:1)).map((e,i)=>[e[0],i]));
+  occCache.clear(); render();
+};
+function pull(){ const s=document.createElement('script'); s.src='data.js?t='+Date.now(); s.onload=s.onerror=()=>{ s.remove(); if(!loaded){ loaded=true; render(); } }; document.head.appendChild(s); }
+
+function occ(from,to){
+  const k=from+'|'+to; if(occCache.has(k)) return occCache.get(k);
+  const out=[]; for(const m of masters) expand(m,from,to,out);
+  out.sort((a,b)=>a.s-b.s||b.e-a.e);
+  if(occCache.size>40) occCache.clear();
+  occCache.set(k,out); return out;
+}
+const colorOf=m=>PAL[(colorMap.get(m.key)||0)%PAL.length];
+const isLong=o=>o.m.allDay||o.e-o.s>=DAY;
+
+/* ---------- dates ---------- */
+const sod=d=>new Date(d.getFullYear(),d.getMonth(),d.getDate());
+const addD=(d,n)=>new Date(d.getFullYear(),d.getMonth(),d.getDate()+n);
+const monday=d=>addD(d,-((d.getDay()+6)%7));
+const same=(a,b)=>a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate();
+const fT=new Intl.DateTimeFormat(undefined,{hour:'numeric',minute:'2-digit'});
+const fH=new Intl.DateTimeFormat(undefined,{hour:'numeric'});
+const fmt=(d,o)=>new Intl.DateTimeFormat(undefined,o).format(d);
+const isoWeek=d=>{const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const n=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-n);return Math.ceil(((t-Date.UTC(t.getUTCFullYear(),0,1))/DAY+1)/7)};
+const range=o=>fT.format(o.s)+' – '+fT.format(o.e);
+const dayN=(a,b)=>Math.round((sod(new Date(a))-sod(new Date(b)))/DAY);
+const inDays=d=>d<=0?'today':d===1?'tomorrow':'in '+d+' days';
+const hours=l=>+(l.reduce((t,o)=>t+(o.e-o.s),0)/36e5).toFixed(1)+' h';
+const dShort=t=>fmt(new Date(t),{day:'numeric',month:'short'});
+
+/* ---------- rendering ---------- */
+function visibleDays(){
+  if(S.view==='day') return [sod(S.cursor)];
+  const m=monday(S.cursor); return Array.from({length:S.days},(_,i)=>addD(m,i));
+}
+function layout(items){
+  items.sort((a,b)=>a.a-b.a||b.b-a.b);
+  let cluster=[],cols=[],end=-1;
+  const flush=()=>{ for(const it of cluster) it.n=cols.length; cluster=[];cols=[];end=-1; };
+  for(const it of items){
+    if(cluster.length&&it.a>=end) flush();
+    let c=cols.findIndex(x=>x<=it.a); if(c<0){ c=cols.length; cols.push(0); }
+    cols[c]=it.vb; it.c=c; cluster.push(it); end=Math.max(end,it.vb);
+  }
+  flush();
+}
+const WELCOME=`<div class="welcome"><div><h2>Waiting for your calendar</h2><p>Open the Timetable app once: it gives this wallpaper your calendar and keeps it up to date.</p></div></div>`;
+function render(){
+  const exams=S.view==='exams';
+  for(const b of $('#view').children) b.classList.toggle('on',b.dataset.v===S.view);
+  document.querySelectorAll('.nav').forEach(b=>b.style.display=exams?'none':'');
+  $('#wkd').textContent=S.days===7?'Hide weekends':'Show weekends'; $('#wkd').style.display=S.view==='week'?'':'none';
+  shown=[];
+  const cal=$('#cal'), top=cal.scrollTop; cal.style.position='relative';
+  if(exams) renderExams(); else renderGrid();
+  cal.scrollTop=top;
+  renderSide();
+}
+function renderGrid(){
+  const days=visibleDays(), from=days[0].getTime(), to=addD(days[days.length-1],1).getTime(), now=new Date();
+  const list=occ(from,to);
+  const mid=days[Math.min(3,days.length-1)];
+  $('#title').innerHTML=S.view==='day'?`${esc(fmt(days[0],{weekday:'long',day:'numeric',month:'long'}))} <span>${days[0].getFullYear()}</span>`:`${esc(fmt(mid,{month:'long'}))} <span>${mid.getFullYear()}</span>`;
+  $('#week').textContent='Week '+isoWeek(days[0]); $('#week').style.display='';
+  const per=days.map(d=>{
+    const a=d.getTime(), b=addD(d,1).getTime(), timed=[], long=[];
+    for(const o of list){
+      if(o.s>=b||o.e<=a) continue;
+      if(isLong(o)) long.push(o);
+      else { const s=Math.max(o.s,a), e=Math.min(o.e,b); const sm=(s-a)/MIN, em=Math.max((e-a)/MIN,sm+1); timed.push({o,a:sm,b:em,vb:Math.max(em,sm+28)}); }
+    }
+    layout(timed); return {d,timed,long};
+  });
+  let h0=8,h1=18;
+  for(const p of per) for(const t of p.timed){ h0=Math.min(h0,Math.floor(t.a/60)); h1=Math.max(h1,Math.ceil(t.b/60)); }
+  h0=Math.max(0,h0); h1=Math.min(24,h1); const hrs=h1-h0, tot=hrs*60;
+  let h=`<div class="head"><div class="row"><div></div>`;
+  for(const p of per) h+=`<div class="dh${same(p.d,now)?' now':''}">${esc(fmt(p.d,{weekday:'short'}))}<b>${p.d.getDate()}</b></div>`;
+  h+=`</div>`;
+  if(per.some(p=>p.long.length)){
+    h+=`<div class="row"><div class="adl">all-day</div>`;
+    for(const p of per){ h+=`<div class="ad">`; for(const o of p.long){ shown.push(o); h+=`<button class="chip" data-i="${shown.length-1}" style="--c:${colorOf(o.m)}">${esc(o.m.subject)}</button>`; } h+=`</div>`; }
+    h+=`</div>`;
+  }
+  h+=`</div><div class="grid" style="--hrs:${hrs}"><div class="hours">`;
+  for(let i=1;i<hrs;i++) h+=`<span style="top:${i/hrs*100}%">${esc(fH.format(new Date(2020,0,1,h0+i)))}</span>`;
+  h+=`</div>`;
+  for(const p of per){
+    const today=same(p.d,now);
+    h+=`<div class="col${today?' now':''}">`;
+    for(const t of p.timed){
+      const top=Math.max(0,(t.a-h0*60)/tot*100), bot=Math.min(100,(t.b-h0*60)/tot*100), o=t.o, ex=o.m.isExam;
+      shown.push(o);
+      h+=`<div class="ev${t.b-t.a<=35?' tiny':''}${o.e<now?' past':''}${ex?' exam':''}" style="top:${top}%;height:${bot-top}%;left:${t.c/t.n*100}%;width:${100/t.n}%;--c:${colorOf(o.m)}"><button data-i="${shown.length-1}"><div class="t">${esc(o.m.subject)}</div><div class="m">${esc(meta(ex?kindLabel(o.m).toUpperCase():o.m.kind,fT.format(o.s),room(o.m)))}</div></button></div>`;
+    }
+    if(today){ const nm=now.getHours()*60+now.getMinutes(); if(nm>=h0*60&&nm<=h1*60) h+=`<div class="nowline" style="top:${(nm-h0*60)/tot*100}%"></div>`; }
+    h+=`</div>`;
+  }
+  h+=`</div>`;
+  if(loaded&&!masters.length) h+=WELCOME;
+  const cal=$('#cal'); cal.style.setProperty('--n',days.length); cal.innerHTML=h;
+}
+function renderExams(){
+  const now=Date.now(), t0=sod(new Date()).getTime(), by=new Map();
+  for(const o of occ(t0-300*DAY,t0+500*DAY)){
+    let s=by.get(o.m.key); if(!s){ s={name:o.m.subject,c:colorOf(o.m),exams:[],resits:[],sessions:[]}; by.set(o.m.key,s); }
+    (o.m.isResit?s.resits:o.m.isExam?s.exams:s.sessions).push(o);
+  }
+  const subs=[...by.values()]; for(const s of subs) s.next=s.exams.find(o=>o.e>now);
+  const withExam=subs.filter(s=>s.next).sort((a,b)=>a.next.s-b.next.s);
+  const rest=subs.filter(s=>!s.next&&!/^r[ée]servation/i.test(s.name)&&(s.sessions.some(o=>o.e>now)||s.resits.some(o=>o.e>now))&&(s.exams.length+s.resits.length>0||s.sessions.length>=2)).sort((a,b)=>a.name.localeCompare(b.name));
+  $('#title').textContent='Exams';
+  $('#week').textContent=withExam.length?'Next '+inDays(dayN(withExam[0].next.s,now)):''; $('#week').style.display=withExam.length?'':'none';
+  let h=`<div class="exams">`;
+  if(!withExam.length&&!rest.length) h+=masters.length?`<div class="welcome"><div><h2>No upcoming exams found</h2><p>Exams are picked up automatically: any event whose title or type says Exam, Examen, Partiel, DS, Contrôle, Midterm or Quiz.</p></div></div>`:(loaded?WELCOME:'');
+  if(withExam.length){
+    const col=['',''], w=[0,0];
+    for(const s of withExam){
+      const ex=s.next, before=s.sessions.filter(o=>o.e>now&&o.s<ex.s), d=dayN(ex.s,now), k=w[0]<=w[1]?0:1;
+      w[k]+=5+before.length; shown.push(ex);
+      const kinds=new Map(); for(const o of before) if(o.m.kind) kinds.set(o.m.kind,(kinds.get(o.m.kind)||0)+1);
+      let c=`<div class="xc" style="--c:${s.c}"><button class="xh" data-i="${shown.length-1}"><div><div class="xn">${esc(s.name)}</div><div class="xw">${esc(fmt(new Date(ex.s),{weekday:'long',day:'numeric',month:'long'}))} · ${esc(range(ex))}</div>${ex.m.loc?`<div class="xr">${esc(room(ex.m))}</div>`:''}</div>`;
+      c+=d>1?`<div class="xd">${d}<small>days</small></div>`:`<div class="xd s">${d<=0?'Today':'Tomorrow'}</div>`;
+      c+=`</button><div class="xsep"></div><div class="xb"><span>BEFORE THE EXAM</span><span>${before.length?esc(meta(before.length+(before.length===1?' class':' classes'),hours(before),[...kinds].map(e=>e[1]+' '+e[0]).join(', '))):''}</span></div>`;
+      if(!before.length) c+=`<div class="xnone">No more classes before this exam.</div>`;
+      for(const o of before){
+        shown.push(o); const today=dayN(o.s,now)===0;
+        c+=`<button class="xs" data-i="${shown.length-1}"><b class="${today?'now':''}">${today?'Today':esc(fmt(new Date(o.s),{weekday:'short',day:'numeric',month:'short'}))}</b><span>${esc(range(o))}</span>${o.m.kind?`<i>${esc(o.m.kind)}</i>`:'<span></span>'}<em>${esc(room(o.m))}</em></button>`;
+      }
+      const later=[...s.exams.filter(o=>o.s>ex.s).map(o=>'exam '+dShort(o.s)),...s.resits.filter(o=>o.e>now).map(o=>'resit '+dShort(o.s))];
+      if(later.length) c+=`<div class="xl">Then: ${esc(later.join(' · '))}</div>`;
+      col[k]+=c+`</div>`;
+    }
+    h+=`<div class="xgrid"><div class="xcol">${col[0]}</div><div class="xcol">${col[1]}</div></div>`;
+  }
+  if(rest.length){
+    h+=`<div class="h" style="margin:18px 0 8px 4px">No upcoming exam</div><div class="rest">`;
+    for(const s of rest){
+      const left=s.sessions.filter(o=>o.e>now), last=s.exams[s.exams.length-1], resit=s.resits.find(o=>o.e>now);
+      h+=`<div style="--c:${s.c}"><span>${esc(s.name)}</span><small>${esc(meta(left.length?left.length+(left.length===1?' class left':' classes left')+' · '+hours(left):'',left.length?'next '+fmt(new Date(left[0].s),{weekday:'short',day:'numeric',month:'short'}):'',last?'exam was '+dShort(last.s):'',resit?'resit '+dShort(resit.s):''))}</small></div>`;
+    }
+    h+=`</div>`;
+  }
+  $('#cal').innerHTML=h+`</div>`;
+}
+function renderSide(){
+  const now=new Date();
+  $('#clock').textContent=fT.format(now);
+  $('#today').innerHTML=`<b>${esc(fmt(now,{weekday:'long'}))}</b> ${esc(fmt(now,{day:'numeric',month:'long',year:'numeric'}))}`;
+  const first=new Date(S.cursor.getFullYear(),S.cursor.getMonth(),1), g0=monday(first), vis=S.view==='exams'?[]:visibleDays();
+  $('#miniTitle').textContent=fmt(first,{month:'long',year:'numeric'});
+  const busy=new Set(occ(g0.getTime(),addD(g0,42).getTime()).map(o=>sod(new Date(Math.max(o.s,g0.getTime()))).getTime()));
+  let h=''; for(let i=0;i<7;i++) h+=`<div class="dow">${esc(fmt(addD(g0,i),{weekday:'narrow'}))}</div>`;
+  for(let i=0;i<42;i++){
+    const d=addD(g0,i), inV=vis.some(v=>same(v,d)), c=[];
+    if(d.getMonth()!==first.getMonth()) c.push('out');
+    if(inV){ c.push('wk'); if(same(d,vis[0])) c.push('f'); if(same(d,vis[vis.length-1])) c.push('l'); }
+    if(same(d,now)) c.push('now'); if(busy.has(d.getTime())) c.push('dot');
+    h+=`<button class="${c.join(' ')}" data-d="${d.getTime()}">${d.getDate()}</button>`;
+  }
+  $('#mini').innerHTML=h;
+  const up=occ(sod(now).getTime(),addD(now,15).getTime()).filter(o=>o.e>now&&!isLong(o)).slice(0,6);
+  let n='',last='';
+  for(const o of up){
+    const diff=dayN(o.s,now), lab=diff<=0?'Today':diff===1?'Tomorrow':fmt(new Date(o.s),{weekday:'long',day:'numeric',month:'short'});
+    if(lab!==last){ n+=`<div class="daylab">${esc(lab)}</div>`; last=lab; }
+    const live=o.s<=now; shown.push(o);
+    n+=`<button class="nx" data-i="${shown.length-1}" style="--c:${colorOf(o.m)}"><i></i><div>${live?'<div class="live">Now</div>':o.m.isExam?`<div class="live">${esc(kindLabel(o.m))}</div>`:''}<div class="t">${esc(o.m.subject)}</div><div class="m">${esc(meta(range(o),o.m.isExam?'':o.m.kind,room(o.m)))}</div></div>${live?`<div class="bar" style="width:${(now-o.s)/(o.e-o.s)*100}%"></div>`:''}</button>`;
+  }
+  $('#next').innerHTML=n||`<div class="empty">Nothing coming up. Enjoy the calm.</div>`;
+}
+function showEvent(o){
+  const d=$('#evDlg'), m=o.m; d.style.setProperty('--c',colorOf(m));
+  const s=new Date(o.s), e=new Date(o.e);
+  let when;
+  if(m.allDay){ const le=addD(e,-1); when=same(s,le)?fmt(s,{weekday:'long',day:'numeric',month:'long'}):dShort(s)+' – '+dShort(le); when+=' · all day'; }
+  else when=fmt(s,{weekday:'long',day:'numeric',month:'long'})+'\n'+range(o);
+  const sub=meta(kindLabel(m),m.teacher,m.code), desc=(m.desc||'').replace(/\s*§\s*/g,'\n');
+  $('#evBody').innerHTML=`<h2>${esc(m.subject)}</h2>${sub?`<div class="evsub">${esc(sub)}</div>`:''}<div class="kv"><span>🕑</span><div>${esc(when)}</div>${m.loc?`<span>📍</span><div>${esc(room(m))}</div>`:''}${desc?`<span>≡</span><div>${esc(desc.slice(0,1500))}</div>`:''}</div><div class="foot"><span></span><button class="btn pri" onclick="evDlg.close()">Close</button></div>`;
+  d.showModal();
+}
+
+/* ---------- ui ---------- */
+function applyTheme(){ document.documentElement.dataset.theme=S.theme==='auto'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):S.theme; }
+function move(n){ if(S.view==='exams') return; S.cursor=addD(S.cursor,n*(S.view==='day'?1:7)); render(); }
+$('#prev').onclick=()=>move(-1); $('#nextB').onclick=()=>move(1);
+$('#tod').onclick=()=>{ S.cursor=new Date(); render(); };
+$('#mPrev').onclick=()=>{ S.cursor=new Date(S.cursor.getFullYear(),S.cursor.getMonth()-1,1); render(); };
+$('#mNext').onclick=()=>{ S.cursor=new Date(S.cursor.getFullYear(),S.cursor.getMonth()+1,1); render(); };
+$('#view').onclick=e=>{ const v=e.target.dataset.v; if(v){ S.view=v; save(); $('#cal').scrollTop=0; render(); } };
+$('#wkd').onclick=()=>{ S.days=S.days===7?5:7; save(); render(); };
+$('#theme').onclick=()=>{ S.theme=document.documentElement.dataset.theme==='dark'?'light':'dark'; save(); applyTheme(); };
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-i]'); if(b&&shown[b.dataset.i]) return showEvent(shown[b.dataset.i]);
+  const d=e.target.closest('[data-d]'); if(d){ S.cursor=new Date(+d.dataset.d); if(S.view==='exams') S.view='week'; render(); }
+  if(e.target.tagName==='DIALOG') e.target.close();
+});
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',applyTheme);
+
+// Lively's "Customise" panel (LivelyProperties.json) calls this
+function livelyPropertyListener(name,val){
+  if(name==='padLeft') document.documentElement.style.setProperty('--padL',val+'px');
+  if(name==='padBottom') document.documentElement.style.setProperty('--padB',val+'px');
+  if(name==='theme'){ S.theme=['auto','light','dark'][val]||'auto'; applyTheme(); }
+}
+
+applyTheme(); render(); pull();
+setInterval(render,30000);
+setInterval(pull,60000);
+</script>
+</body>
+</html>

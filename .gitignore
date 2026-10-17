@@ -1,0 +1,7 @@
+# Your own calendar data: written by the app for the wallpaper, never uploaded
+Timetable/wallpaper/data.js
+Timetable/wallpaper/*.tmp
+Timetable/Timetable-wallpaper.zip
+
+# Built Mac app
+Timetable-Mac/Timetable.app/

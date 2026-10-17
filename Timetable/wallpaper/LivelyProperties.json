@@ -1,0 +1,1 @@
+{"padLeft":{"type":"slider","text":"Space on the left for desktop icons","value":0,"min":0,"max":600,"step":10},"padBottom":{"type":"slider","text":"Space at the bottom for the taskbar","value":52,"min":0,"max":200,"step":2},"theme":{"type":"dropdown","text":"Theme","value":0,"items":["Auto","Light","Dark"]}}

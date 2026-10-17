@@ -1,0 +1,1 @@
+This file lets the Timetable app find this wallpaper and keep data.js up to date. Do not delete it.
