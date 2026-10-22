@@ -2,9 +2,22 @@
 
 A good-looking timetable for your Outlook (or any `.ics`) calendar, with an **Exams** tab that lists every subject, its next exam and every class left before it.
 
+## Download
+
+| | |
+|---|---|
+| **Mac** (macOS 13 or later, Apple silicon and Intel) | [Timetable-Mac.dmg](https://github.com/Arthurom0/timetable/releases/latest/download/Timetable-Mac.dmg) |
+| **Windows** (10 and 11) | [Timetable-Windows.zip](https://github.com/Arthurom0/timetable/releases/latest/download/Timetable-Windows.zip) (app + live wallpaper) or just [Timetable.exe](https://github.com/Arthurom0/timetable/releases/latest/download/Timetable.exe) |
+
+Older versions are on the [Releases page](https://github.com/Arthurom0/timetable/releases).
+
+**Mac:** open the `.dmg` and drag **Timetable** onto **Applications**. The app isn't signed by a registered Apple developer, so the first time you open it macOS says it "cannot be opened because Apple cannot check it for malicious software". Click **Done**, then go to **System Settings → Privacy & Security**, scroll down to the message about Timetable and click **Open Anyway** (enter your password if asked). After that it opens normally.
+
+**Windows:** unzip `Timetable-Windows.zip` (right-click → **Extract All**) and double-click `Timetable.exe`. Because the app isn't signed, Windows SmartScreen may show "Windows protected your PC": click **More info**, then **Run anyway**. Your browser may also ask whether to keep the download; choose **Keep**.
+
 ## Windows app — `Timetable/`
 
-Double-click `Timetable/Timetable.exe`. Nothing to install.
+Double-click `Timetable/Timetable.exe` (or the downloaded one). Nothing to install.
 
 - Click **Calendars** to add your Outlook ICS link (it refreshes every 15 minutes) or an `.ics` file. Dropping a newer file with the same name replaces the old one.
 - **Day / Week / Exams** views, light and dark mode. Keys: ← → (previous / next), T (today), D, W, E (views).
@@ -22,4 +35,17 @@ A version of the timetable for [Lively Wallpaper](https://apps.microsoft.com/det
 
 ## Mac app — `Timetable-Mac/`
 
-Built on the Mac itself: in Terminal, run `bash build.sh` from that folder (needs Apple's command line tools; it offers to install them). This version has no Exams tab yet.
+Same features as the Windows app, in a native Mac window. Your calendars are stored in `~/Library/Application Support/Timetable`.
+
+To build it yourself instead of downloading it: in Terminal, run `bash build.sh` from that folder (needs Apple's command line tools; it offers to install them). `bash make-dmg.sh` builds the app and wraps it in `Timetable-Mac.dmg`.
+
+## Publishing a new version
+
+The workflow in `.github/workflows/release.yml` builds both apps on GitHub's Mac and Windows machines. To publish a release:
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+A few minutes later the release appears on the Releases page with `Timetable-Mac.dmg`, `Timetable-Windows.zip` and `Timetable.exe` attached, and the download links above point to it. Use a higher number (`v1.0.1`, `v1.1.0`, …) for each new version. To try a build without releasing, open the **Actions** tab, choose **Release** and click **Run workflow**; the files are on that run's page.

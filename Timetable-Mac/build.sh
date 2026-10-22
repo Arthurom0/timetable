@@ -1,5 +1,5 @@
 #!/bin/bash
-# Builds Timetable.app on the Mac itself (Apple silicon Macs get a native arm64 app).
+# Builds Timetable.app on the Mac itself, as one app that runs natively on Apple silicon and Intel Macs.
 # Needs Apple's free command line tools; if they are missing, macOS offers to install them.
 set -e
 cd "$(dirname "$0")"
@@ -16,11 +16,17 @@ rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 
 echo "Compiling..."
-swiftc -O main.swift -o "$APP/Contents/MacOS/Timetable" -framework Cocoa -framework WebKit
+for ARCH in arm64 x86_64; do
+  swiftc -O main.swift -target $ARCH-apple-macos13 -o "Timetable-$ARCH" -framework Cocoa -framework WebKit
+done
+lipo -create Timetable-arm64 Timetable-x86_64 -output "$APP/Contents/MacOS/Timetable"
+rm Timetable-arm64 Timetable-x86_64
 
 cp Timetable.html Timetable.icns "$APP/Contents/Resources/"
 
-cat > "$APP/Contents/Info.plist" <<'EOF'
+# VERSION is set by the release workflow from the git tag (v1.2.0 -> 1.2.0)
+VERSION="${VERSION:-1.0}"
+cat > "$APP/Contents/Info.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -31,9 +37,9 @@ cat > "$APP/Contents/Info.plist" <<'EOF'
   <key>CFBundleExecutable</key><string>Timetable</string>
   <key>CFBundleIconFile</key><string>Timetable</string>
   <key>CFBundlePackageType</key><string>APPL</string>
-  <key>CFBundleShortVersionString</key><string>1.0</string>
+  <key>CFBundleShortVersionString</key><string>$VERSION</string>
   <key>CFBundleVersion</key><string>1</string>
-  <key>LSMinimumSystemVersion</key><string>12.0</string>
+  <key>LSMinimumSystemVersion</key><string>13.0</string>
   <key>NSHighResolutionCapable</key><true/>
 </dict>
 </plist>
@@ -45,4 +51,5 @@ codesign --force --sign - "$APP"
 
 echo "Done: $(pwd)/$APP"
 echo "Drag Timetable.app into your Applications folder."
-open -R "$APP"
+[ -z "$CI" ] && open -R "$APP"
+exit 0
