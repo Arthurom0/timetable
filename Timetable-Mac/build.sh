@@ -18,7 +18,7 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 echo "Compiling..."
 swiftc -O main.swift -o "$APP/Contents/MacOS/Timetable" -framework Cocoa -framework WebKit
 
-cp Timetable.html "$APP/Contents/Resources/"
+cp Timetable.html Timetable.icns "$APP/Contents/Resources/"
 
 cat > "$APP/Contents/Info.plist" <<'EOF'
 <?xml version="1.0" encoding="UTF-8"?>
@@ -29,6 +29,7 @@ cat > "$APP/Contents/Info.plist" <<'EOF'
   <key>CFBundleDisplayName</key><string>Timetable</string>
   <key>CFBundleIdentifier</key><string>local.timetable.app</string>
   <key>CFBundleExecutable</key><string>Timetable</string>
+  <key>CFBundleIconFile</key><string>Timetable</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleShortVersionString</key><string>1.0</string>
   <key>CFBundleVersion</key><string>1</string>
@@ -38,6 +39,8 @@ cat > "$APP/Contents/Info.plist" <<'EOF'
 </plist>
 EOF
 
+# Files on the Desktop pick up extended attributes that codesign refuses to sign
+xattr -cr "$APP"
 codesign --force --sign - "$APP"
 
 echo "Done: $(pwd)/$APP"
