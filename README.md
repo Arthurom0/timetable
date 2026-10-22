@@ -11,9 +11,9 @@ A good-looking timetable for your Outlook (or any `.ics`) calendar, with an **Ex
 
 Older versions are on the [Releases page](https://github.com/Arthurom0/timetable/releases).
 
-**Mac:** open the `.dmg` and drag **Timetable** onto **Applications**. The app isn't signed by a registered Apple developer, so the first time you open it macOS says it "cannot be opened because Apple cannot check it for malicious software". Click **Done**, then go to **System Settings → Privacy & Security**, scroll down to the message about Timetable and click **Open Anyway** (enter your password if asked). After that it opens normally.
+**Mac:** open the `.dmg` and drag **Timetable** onto **Applications**. (The `.dmg` also has a **Build it yourself** folder: double-click **Build Timetable** to rebuild the app from the `Source` folder next to it and install it, no Terminal needed. Copy the folder somewhere first if you want to edit the source.) The app isn't signed by a registered Apple developer, so the first time you open it macOS says it "cannot be opened because Apple cannot check it for malicious software". Click **Done**, then go to **System Settings → Privacy & Security**, scroll down to the message about Timetable and click **Open Anyway** (enter your password if asked). After that it opens normally.
 
-**Windows:** unzip `Timetable-Windows.zip` (right-click → **Extract All**) and double-click `Timetable.exe`. Because the app isn't signed, Windows SmartScreen may show "Windows protected your PC": click **More info**, then **Run anyway**. Your browser may also ask whether to keep the download; choose **Keep**.
+**Windows:** unzip `Timetable-Windows.zip` (right-click → **Extract All**) and double-click `Timetable.exe`. To rebuild it from the included `source` folder, double-click **Build Timetable.bat**. Because the app isn't signed, Windows SmartScreen may show "Windows protected your PC": click **More info**, then **Run anyway**. Your browser may also ask whether to keep the download; choose **Keep**.
 
 ## Windows app — `Timetable/`
 
@@ -27,7 +27,7 @@ Double-click `Timetable/Timetable.exe` (or the downloaded one). Nothing to insta
 
 Your calendars are stored in `%AppData%\Timetable`, not in this folder.
 
-To rebuild the app after changing `Timetable/source/Timetable.cs`, run `Timetable/source/build.ps1` (it uses the C# compiler built into Windows).
+To rebuild the app after changing `Timetable/source/Timetable.cs`, double-click `Timetable/Build Timetable.bat` (it runs `source/build.ps1`, which uses the C# compiler built into Windows).
 
 ## Live wallpaper — `Timetable/wallpaper/`
 
@@ -37,7 +37,7 @@ A version of the timetable for [Lively Wallpaper](https://apps.microsoft.com/det
 
 Same features as the Windows app, in a native Mac window. Your calendars are stored in `~/Library/Application Support/Timetable`.
 
-To build it yourself instead of downloading it: in Terminal, run `bash build.sh` from that folder (needs Apple's command line tools; it offers to install them). `bash make-dmg.sh` builds the app and wraps it in `Timetable-Mac.dmg`.
+To build it yourself instead of downloading it, either double-click **Build Timetable** in the downloaded `.dmg`, or in Terminal run `bash build.sh` from that folder (needs Apple's command line tools; it offers to install them). `bash make-dmg.sh` builds the app and wraps it in `Timetable-Mac.dmg`.
 
 ## Publishing a new version
 

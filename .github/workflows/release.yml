@@ -42,6 +42,8 @@ jobs:
           New-Item -ItemType Directory out\Timetable | Out-Null
           Copy-Item Timetable\Timetable.exe out\Timetable\
           Copy-Item Timetable\wallpaper out\Timetable\wallpaper -Recurse
+          Copy-Item Timetable\source out\Timetable\source -Recurse
+          Copy-Item "Timetable\Build Timetable.bat" out\Timetable\
           Compress-Archive out\Timetable Timetable-Windows.zip
           Copy-Item Timetable\Timetable.exe Timetable.exe
       - uses: actions/upload-artifact@v4
